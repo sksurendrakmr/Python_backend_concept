@@ -8,7 +8,7 @@ In python, type hinting doesn't give error on type mismatch. We need type checke
  Instead of age: int | None -> age: Optional[int] (older way)
 """
 
-from typing import NewType, Tuple
+from typing import NewType, Tuple, TypedDict
 
 RGB = NewType("RGB", Tuple[int, int, int])
 HSL = NewType("HSL", Tuple[int, int, int])
@@ -19,9 +19,17 @@ UserReturnType = dict[str, str | int | RGB | None]
 # type alias with python new version
 type UserReturnTypeNew = dict[str, str | int | None]
 
+# This allows to define type of each dict properties
+class User(TypedDict):
+    first_name: str
+    last_name: str
+    email: str
+    age: int | None
+    fav_color: RGB | None
+
 
 def create_user(first_name: str, last_name: str, age: int | None = None,
-                fav_color: RGB | None = None) -> UserReturnType:
+                fav_color: RGB | None = None) -> User:
     email = f"{first_name.lower()}_{last_name.lower()}@example.com"
     return {
         "first_name": first_name,
