@@ -33,6 +33,9 @@ session = Session()
 # create table
 new_person = People(name='John', age=21)
 session.add(new_person)
+session.flush()  # This will add new_person temporary somewhere and give id. Note: This will not save the data to DB.
+
+new_thing = Thing(description='My favorite thing', value=500, owner=new_person.id)
+session.add(new_thing)
+
 session.commit()
-
-
