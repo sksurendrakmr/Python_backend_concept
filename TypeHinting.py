@@ -6,9 +6,13 @@ In python, type hinting doesn't give error on type mismatch. We need type checke
  - mypy -> uvx mypy <file_name>
 
  Instead of age: int | None -> age: Optional[int] (older way)
-"""
 
-from typing import NewType, Tuple, TypedDict
+
+ TypeVar -> It could be any type, but it will be same type throughout.
+"""
+import random
+from typing import NewType, Tuple, TypedDict, TypeVar
+from dataclasses import dataclass
 
 RGB = NewType("RGB", Tuple[int, int, int])
 HSL = NewType("HSL", Tuple[int, int, int])
@@ -19,26 +23,27 @@ UserReturnType = dict[str, str | int | RGB | None]
 # type alias with python new version
 type UserReturnTypeNew = dict[str, str | int | None]
 
-# This allows to define type of each dict properties
-class User(TypedDict):
+#we are returning class, this way we have a lot of access to different method
+@dataclass()
+class User:
     first_name: str
     last_name: str
     email: str
-    age: int | None
-    fav_color: RGB | None
+    age: int | None = None
+    fav_color: RGB | None = None
 
 
 def create_user(first_name: str, last_name: str, age: int | None = None,
                 fav_color: RGB | None = None) -> User:
     email = f"{first_name.lower()}_{last_name.lower()}@example.com"
-    return {
-        "first_name": first_name,
-        "last_name": last_name,
-        "email": email,
-        "age": age,
-        "fav_color": fav_color,
-    }
+    return User(first_name, last_name, email, age, fav_color)
+
 
 
 user1 = create_user("John", "Doe")
 user2 = create_user("Oliver", "Doe", age=22, fav_color=RGB((200,90,78)))
+
+
+T = TypeVar("T")
+def random_choice(items: list[T]) -> T:
+    return random.choice(items)
