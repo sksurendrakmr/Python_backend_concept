@@ -11,7 +11,7 @@ In python, type hinting doesn't give error on type mismatch. We need type checke
  TypeVar -> It could be any type, but it will be same type throughout.
 """
 import random
-from typing import NewType, Tuple, TypedDict, TypeVar
+from typing import NewType, Tuple
 from dataclasses import dataclass
 
 RGB = NewType("RGB", Tuple[int, int, int])
@@ -44,6 +44,6 @@ user1 = create_user("John", "Doe")
 user2 = create_user("Oliver", "Doe", age=22, fav_color=RGB((200,90,78)))
 
 
-T = TypeVar("T")
-def random_choice(items: list[T]) -> T:
+
+def random_choice[T](items: list[T]) -> T:
     return random.choice(items)
