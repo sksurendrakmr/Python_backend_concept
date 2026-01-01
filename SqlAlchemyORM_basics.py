@@ -39,3 +39,14 @@ new_thing = Thing(description='My favorite thing', value=500, owner=new_person.i
 session.add(new_thing)
 
 session.commit()
+
+# SELECT
+result = session.query(People.name, People.age).all()
+print(result) # result will be tuple
+
+# M2
+fetch_result = session.query(People).all()
+print([p.name for p in fetch_result])
+
+# Conditional Select
+conditional_fetch = session.query(People).filter(People.age > 30).all()
