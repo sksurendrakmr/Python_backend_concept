@@ -1,9 +1,14 @@
-from pydantic import BaseModel, ValidationError
-from datetime import datetime
+from functools import partial
+from typing import Literal
+
+from pydantic import BaseModel, ValidationError, Field
+from datetime import datetime, UTC
 
 '''
     Model instances are mutable by default and also by default they don't revalidate when we change a field.
     We can change this default behaviour in model configuration.
+    
+    https://gist.github.com/CoreyMSchafer/26fbfae9fb2ad293cc431530e8932855
 '''
 
 
@@ -56,3 +61,35 @@ try:
 except ValidationError as e:
     print(e)
 
+# ------------------- Pydantic types and how to validate it ---------
+'''
+    Pydantic support all the standard python types that we would expect.
+    - int
+    - bool
+    - str
+    - float
+    - list
+    - dictionary
+    - tuple
+    - set
+    - datetime etc.
+    
+    We can use Union to tell that a field can be one of several types and we can use Optional to allow None values.
+    Even we can use literal types to specify exact values that are allowed.
+    
+    funcTool partial let us prefill some arguments to a function. So it allows us to pass in a function and some argument
+    and returns a new unexpected function that is the original function with those specific arguments already set.
+'''
+
+
+class BlogPost(BaseModel):
+    title: str
+    content: str
+    view_count: int = 0
+    is_published: bool = False
+    tags: list[str] = Field(
+        default_factory=list)  # default_factory is a function that get called to create a new default value each time we create an instance
+    # created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    created_at: datetime = Field(default_factory=partial(datetime.now, tz=UTC))
+    author_id: int | str
+    status: Literal["draft", "published", "archived"] = "draft"
