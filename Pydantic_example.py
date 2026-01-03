@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Literal
+from typing import Literal, Annotated
 
 from pydantic import BaseModel, ValidationError, Field
 from datetime import datetime, UTC
@@ -83,8 +83,8 @@ except ValidationError as e:
 
 
 class BlogPost(BaseModel):
-    title: str
-    content: str
+    title: Annotated[str, Field(min_length=1, max_length=200)]
+    content: Annotated[str, Field(min_length=10)]
     view_count: int = 0
     is_published: bool = False
     tags: list[str] = Field(
@@ -93,3 +93,21 @@ class BlogPost(BaseModel):
     created_at: datetime = Field(default_factory=partial(datetime.now, tz=UTC))
     author_id: int | str
     status: Literal["draft", "published", "archived"] = "draft"
+    slug: Annotated[str, Field(pattern=r"^[a-z0-9-]+$")]
+
+
+# ------------ ADDING CONSTRAINTS TO FIELD -----
+'''
+    We already been using Field for things like default_factory.
+    We can use it add constraints like minimum and maximum values, Length requirements and patterns etc.
+    
+    From Pydantic version 2, the recommended way to add constraints is using the annotated type from python typing modules.
+    
+    Annotated -> way to add metadata to the current type.
+'''
+
+
+class EmployeePost(BaseModel):
+    eid: Annotated[int, Field(gt=0)]
+    employee_name: Annotated[str, Field(min_length=3, max_length=20)]
+    age: Annotated[int, Field(ge=15, le=70)]
