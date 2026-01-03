@@ -1,7 +1,8 @@
 from functools import partial
 from typing import Literal, Annotated
+from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ValidationError, Field
+from pydantic import BaseModel, ValidationError, Field, EmailStr, HttpUrl, SecretStr
 from datetime import datetime, UTC
 
 '''
@@ -14,9 +15,11 @@ from datetime import datetime, UTC
 
 # Pydantic will use this property to validate the data at runtime.
 class User(BaseModel):
-    uid: int
+    uid: UUID = Field(default_factory=uuid4)
     username: str  # These are required field as we don't pass default value. Pydantic will require these to be passed in when we create a user instance.
-    email: str
+    email: EmailStr
+    website: HttpUrl | None = None
+    password: SecretStr  # SecretStr for sensitive data, the data will be hidden in logs etc
     bio: str = ""
     is_active: bool = True  # If we don't pass explicitly then it will take this default value.
 
@@ -24,8 +27,9 @@ class User(BaseModel):
     verified_at: datetime | None = None
 
 
-user = User(uid=23, username="sk", email="email")
+user = User(username="sk", email="email@dayrep.com", password="password")
 print(user)
+print((user.password.get_secret_value()))
 
 # Modifying and accessing data
 print(user.username)  # access
