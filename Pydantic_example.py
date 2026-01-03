@@ -39,3 +39,20 @@ print(user.model_dump_json(indent=2))  # indent format the JSON with 2 spaces.
     model_dump() and model_dump_json() are useful when we need to serialize our model for storage or sending over a network.
     Serialize means converting the Python object into a simple format that can be easily saved to a file or sent to different systems.
 '''
+
+# ------------- WHAT IF VALIDATION FAIL -------------
+'''
+    Pydantic catches multiple errors at once.
+    uid will not be in the error list if validation fails. This is because Pydantic has type coercion enabled by default.
+    E.g. if we try to assign string in place of int, it will try to convert types when it make sense to do so.
+    
+    uid = "123" -> pydantic will do type coercion
+    uid = "Test" -> pydantic will include uid in validation error list.
+'''
+
+try:
+    user1 = User(uid="Test", username=None, email=123)
+    print(user1.model_dump_json(indent=2))
+except ValidationError as e:
+    print(e)
+
