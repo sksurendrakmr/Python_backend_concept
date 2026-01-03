@@ -2,7 +2,7 @@ from functools import partial
 from typing import Literal, Annotated
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ValidationError, Field, EmailStr, HttpUrl, SecretStr
+from pydantic import BaseModel, ValidationError, Field, EmailStr, HttpUrl, SecretStr, field_validator, model_validator
 from datetime import datetime, UTC
 
 '''
@@ -25,6 +25,14 @@ class User(BaseModel):
 
     full_name: str | None = None  # Optional value without default value.
     verified_at: datetime | None = None
+
+    # validated and normalized
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, v: str) -> str:
+        if not v.replace("_", "").isalnum():
+            raise ValueError("Username must be alphanumeric (underscores allowed)")
+        return v.lower()
 
 
 user = User(username="sk", email="email@dayrep.com", password="password")
@@ -86,6 +94,12 @@ except ValidationError as e:
 '''
 
 
+class Comment(BaseModel):
+    content: str
+    author_email: EmailStr
+    likes: int = 0
+
+
 class BlogPost(BaseModel):
     title: Annotated[str, Field(min_length=1, max_length=200)]
     content: Annotated[str, Field(min_length=10)]
@@ -98,6 +112,7 @@ class BlogPost(BaseModel):
     author_id: int | str
     status: Literal["draft", "published", "archived"] = "draft"
     slug: Annotated[str, Field(pattern=r"^[a-z0-9-]+$")]
+    comments: list[Comment] = Field(default_factory=list)  # nested model
 
 
 # ------------ ADDING CONSTRAINTS TO FIELD -----
@@ -115,3 +130,31 @@ class EmployeePost(BaseModel):
     eid: Annotated[int, Field(gt=0)]
     employee_name: Annotated[str, Field(min_length=3, max_length=20)]
     age: Annotated[int, Field(ge=15, le=70)]
+
+
+'''
+    1. Pydantic validators either return value or raise an error.
+    2. The raised error should be (recommended) valueError. Pydantic will catch this and convert to a ValidationError automatically.
+    3. If we raise an error then don't mutate the value first. So either return the modified value or raise an error but not both.
+    
+    @field_validator -> for validating the individual field
+    @model_validator -> for validating the complete model and how to access other fields during validation.
+    
+    These custom validator give us complete control over our validation logic when the built-in constraints aren't enough.
+    
+    @computed-field -> Sometimes we want to have fields that are calculated from other fields and we want to be included when
+    we serialize the model to a dictionary or JSON.
+    e.g -> display_name that is generated from the first_name and last_name.
+'''
+
+
+class UserRegistration(BaseModel):
+    email: EmailStr
+    password: str
+    confirm_password: str
+
+    @model_validator(mode="after")
+    def passwords_match(self) -> "UserRegistration":
+        if self.password != self.confirm_password:
+            raise ValueError("Passwords do not match")
+        return self
