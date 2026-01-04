@@ -1,9 +1,19 @@
+import json
+from contextlib import asynccontextmanager
 from enum import IntEnum
 from typing import List, Optional
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
+from redis import Redis
 from starlette import status
+import httpx
 
+@asynccontextmanager
+def lifespan(app: FastAPI):
+    app.state.redis = Redis(host="localhost", port=6379)
+    app.state.http_client = httpx.AsyncClient()
+    yield # signal server that the application is ready to start serving request.
+    app.state.redis.close()
 
 class Priority(IntEnum):
     LOW = 3
@@ -26,7 +36,7 @@ class TodoUpdate(BaseModel):
     todo_name: Optional[str] = Field(None, min_length=3, max_length=100, description="Name of the todo")
     todo_description: Optional[str] = Field(None, description="Description of the todo")
     priority: Optional[Priority] = Field(None, description="Priority of the todo")
-api = FastAPI()
+api = FastAPI(lifespan=lifespan)
 
 all_todos = [
     Todo(todo_id=1, todo_name='sports', todo_description='Go to Gym', priority=Priority.MEDIUM),
@@ -81,3 +91,14 @@ def delete_todo(todo_id:int):
             deleted_todo = all_todos.pop(index)
             return deleted_todo
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Todo Not found.")
+
+
+@api.get("/entries")
+async def get_entries():
+    value = api.state.redis.get("entries")
+    if value is None:
+        response = await api.state.http_client.get("https://api.publicapis.org/entries")
+        value = response.json()
+        data_str = json.dumps(value)
+        api.state.redis.set("entries", data_str)
+    return json.loads(value)

@@ -2,7 +2,8 @@ from functools import partial
 from typing import Literal, Annotated
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ValidationError, Field, EmailStr, HttpUrl, SecretStr, field_validator, model_validator
+from pydantic import BaseModel, ValidationError, Field, EmailStr, HttpUrl, SecretStr, field_validator, model_validator, \
+    ConfigDict
 from datetime import datetime, UTC
 
 '''
@@ -15,7 +16,8 @@ from datetime import datetime, UTC
 
 # Pydantic will use this property to validate the data at runtime.
 class User(BaseModel):
-    uid: UUID = Field(default_factory=uuid4)
+    model_config = ConfigDict(populate_by_name=True, strict=True, validate_assignment=True, extra='allow', frozen=True)
+    uid: UUID = Field(alias="id", default_factory=uuid4)
     username: str  # These are required field as we don't pass default value. Pydantic will require these to be passed in when we create a user instance.
     email: EmailStr
     website: HttpUrl | None = None
@@ -158,3 +160,14 @@ class UserRegistration(BaseModel):
         if self.password != self.confirm_password:
             raise ValueError("Passwords do not match")
         return self
+
+user_data = {
+    "id": "3bc4bf25-1b73-44da-9078-f2bb310c7374",
+    "username": "Corey_Schafer",
+    "email": "CoreyMSchafer@gmail.com",
+    "age": "39",
+    "password": "secret123",
+}
+user = User.model_validate(user_data)
+
+print("JSON",user.model_dump_json(indent=2, by_alias=True, exclude={"password"}, include={"username", "email"}))
