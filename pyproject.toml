@@ -8,6 +8,7 @@ dependencies = [
     "fastapi>=0.128.0",
     "httpx>=0.28.1",
     "mypy>=1.11",
+    "prometheus-client>=0.23.1",
     "pydantic[email]>=2.12.5",
     "redis>=7.1.0",
     "sqlalchemy>=2.0.45",
