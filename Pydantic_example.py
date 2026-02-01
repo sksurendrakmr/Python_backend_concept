@@ -29,12 +29,21 @@ class User(BaseModel):
     verified_at: datetime | None = None
 
     # validated and normalized
+    #The custom validators run after pydantic checks the type checking and the built-in validation and constraints that we have above.
     @field_validator("username")
     @classmethod
     def validate_username(cls, v: str) -> str:
         if not v.replace("_", "").isalnum():
             raise ValueError("Username must be alphanumeric (underscores allowed)")
         return v.lower()
+    
+    #with mode="before", we can manipulate the raw input value before pydantic does any validation on it.
+    @field_validator("website", mode="before")
+    @classmethod
+    def validate_website(cls, v: HttpUrl | None) -> HttpUrl | None:
+        if v and not v.startswith("https://", "http://"):
+            return f"https://{v}"
+        return v
 
 
 user = User(username="sk", email="email@dayrep.com", password="password")
@@ -140,7 +149,7 @@ class EmployeePost(BaseModel):
     3. If we raise an error then don't mutate the value first. So either return the modified value or raise an error but not both.
     
     @field_validator -> for validating the individual field
-    @model_validator -> for validating the complete model and how to access other fields during validation.
+    @model_validator -> useful when we need to validate multiple fields together or validate the entire model as a whole.
     
     These custom validator give us complete control over our validation logic when the built-in constraints aren't enough.
     
