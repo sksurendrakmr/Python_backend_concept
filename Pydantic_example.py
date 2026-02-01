@@ -2,9 +2,15 @@ from functools import partial
 from typing import Literal, Annotated
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ValidationError, Field, EmailStr, HttpUrl, SecretStr, field_validator, model_validator, \
+from pydantic import BaseModel, ValidationError, Field, EmailStr, HttpUrl, SecretStr, computed_field, field_validator, model_validator, \
     ConfigDict
 from datetime import datetime, UTC
+import json
+
+# to convert dictionary to JSON -> json.dumps(data_dict)
+# to convert JSON to dictionary -> json.loads(json_string)
+
+# json to pydantic model -> User.model_validate(json.loads(json_string))
 
 '''
     Model instances are mutable by default and also by default they don't revalidate when we change a field.
@@ -15,6 +21,23 @@ from datetime import datetime, UTC
 
 
 # Pydantic will use this property to validate the data at runtime.
+
+# populate_by_name -> allow pydantic to accept both the field name and the alias when loading data but
+# it still uses the field name when exporting/printing data.
+
+# by_Alias -> when we serialize the model to dictionary or JSON, it will use the alias names instead of the field names while exporting/printing.
+
+# exclude -> we can exclude specific fields from the serialized output.
+
+# include -> we can include only specific fields in the serialized output.
+
+# strict -> enforce strict type checking (prevent type coercion)
+
+# extra -> control how to handle extra fields that are not defined in the model. Options are 'ignore', 'forbid', 'allow'.
+
+# validate_assignment -> revalidate fields when they are updated/modified.
+
+# frozen -> make the model immutable (prevent any modifications after creation).
 class User(BaseModel):
     model_config = ConfigDict(populate_by_name=True, strict=True, validate_assignment=True, extra='allow', frozen=True)
     uid: UUID = Field(alias="id", default_factory=uuid4)
@@ -24,7 +47,9 @@ class User(BaseModel):
     password: SecretStr  # SecretStr for sensitive data, the data will be hidden in logs etc
     bio: str = ""
     is_active: bool = True  # If we don't pass explicitly then it will take this default value.
-
+    first_name:str = ""
+    last_name: str = ""
+    follower_count: int = 0
     full_name: str | None = None  # Optional value without default value.
     verified_at: datetime | None = None
 
@@ -44,6 +69,17 @@ class User(BaseModel):
         if v and not v.startswith("https://", "http://"):
             return f"https://{v}"
         return v
+    
+    # The computed fields are read-only properties that are calculated based on other fields in the model when we serialize the model.
+    @computed_field
+    @property
+    def full_name(self) -> str:
+        return f"{self.first_name} {self.last_name}".strip()
+    
+    @computed_field
+    @property
+    def is_influencer(self) -> bool:
+        return self.follower_count > 10000
 
 
 user = User(username="sk", email="email@dayrep.com", password="password")
@@ -61,7 +97,7 @@ print(user.bio)
 print(user.model_dump())
 
 # to get JSON
-print(user.model_dump_json(indent=2))  # indent format the JSON with 2 spaces.
+print(user.model_dump_json(indent=2, by_alias=True, exclude={"password"}, include={"username", "email"}))  # indent format the JSON with 2 spaces.
 
 '''
     model_dump() and model_dump_json() are useful when we need to serialize our model for storage or sending over a network.
